@@ -73,7 +73,8 @@
 		</div>
 
 		<script>
-
+            
+            var mesh = null;
 			var camera, scene, renderer;
 			var geometry, material, mesh;
 			var controls;
@@ -142,6 +143,22 @@
 				instructions.innerHTML = 'Your browser doesn\'t seem to support Pointer Lock API';
 
 			}
+            
+            function initMesh(){
+        
+                var loader = new THREE.JSONLoader();
+                loader.load('pokemon.json', function(geometry) {
+                mesh = new THREE.Mesh(geometry);
+                mesh.scale.x = mesh.scale.y = mesh.scale.z = 30;
+                scene.add(mesh);
+                console.log("jemoeder");
+                loader.load('pokemon.json', function(geometry, materials) {
+                mesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
+});
+
+    });
+}
+      initMesh();
 
 			init();
 			animate();
@@ -317,9 +334,14 @@
 			}
 
 			function animate() {
-
+                    
 				requestAnimationFrame( animate );
 
+                if(mesh){
+                        mesh.rotation.y += 0.1;
+                        console.log(mesh.rotation.y);
+                        
+                    }
 				if ( controlsEnabled ) {
 					raycaster.ray.origin.copy( controls.getObject().position );
 					raycaster.ray.origin.y -= 10;
