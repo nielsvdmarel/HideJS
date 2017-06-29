@@ -59,6 +59,7 @@
 		</style>
 	</head>
 	<body>
+        <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
 		<script src="js/three.min.js"></script>
 		<script src="js/PointerLockControls.js"></script>
 
@@ -73,6 +74,8 @@
 		</div>
 
 		<script>
+            let socket = io();
+            var players = [];
             
             var mesh = null;
 			var camera, scene, renderer;
@@ -144,20 +147,42 @@
 
 			}
             
+            var playerGeometry;
+            
+            socket.emit('joined',{input:'true'});
+            
+            socket.on("player join", data => {
+                var player = {
+                    id: data.id,
+                    mesh: new THREE.Mesh(playerGeometry)
+                }
+                player.mesh.scale.x = player.mesh.scale.y = player.mesh.scale.z = 30;
+                scene.add(player.mesh);
+                players.push(player);
+            });
+            
+            socket.on("playerMove", data => {
+                for(let i = 0; i < players.length; i++ ){
+                    if(players[i].id != data.id) continue;
+                    if(!players[i].mesh) continue;
+                    players[i].mesh.position.x = data.position.x;
+                    players[i].mesh.position.y = data.position.y;
+                    players[i].mesh.position.z = data.position.z;
+                    console.log(players[i].mesh.position);
+                }
+            })
+            
             function initMesh(){
         
                 var loader = new THREE.JSONLoader();
                 loader.load('pokemon.json', function(geometry) {
-                mesh = new THREE.Mesh(geometry);
-                mesh.scale.x = mesh.scale.y = mesh.scale.z = 30;
-                scene.add(mesh);
-                console.log("jemoeder");
-                loader.load('pokemon.json', function(geometry, materials) {
-                mesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
-});
-
-    });
-}
+                    playerGeometry = geometry;
+                })
+            }
+                //loader.load('pokemon.json', function(geometry, materials) {
+                //mesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
+            //});
+            
       initMesh();
 
 			init();
@@ -342,6 +367,7 @@
                         console.log(mesh.rotation.y);
                         
                     }
+                
 				if ( controlsEnabled ) {
 					raycaster.ray.origin.copy( controls.getObject().position );
 					raycaster.ray.origin.y -= 10;
@@ -373,6 +399,11 @@
 					controls.getObject().translateX( velocity.x * delta );
 					controls.getObject().translateY( velocity.y * delta );
 					controls.getObject().translateZ( velocity.z * delta );
+                    
+                    socket.emit("update",{
+                        position:controls.getObject().position
+                        
+                    })
 
 					if ( controls.getObject().position.y < 10 ) {
 
